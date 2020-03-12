@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: okeatpapp
+  name: oke-atp-helidon
   namespace: default
 spec:
   type: LoadBalancer
@@ -10,43 +10,50 @@ spec:
     protocol: TCP
     targetPort: 8080
   selector:
-    app: okeatpapp
+    app: oke-atp-helidon
 ---
-kind: Pod
-apiVersion: v1
+kind: Deployment
+apiVersion: apps/v1
 metadata:
   name: oke-atp-helidon
-  labels:
-    app: okeatpapp
-  namespace: default
 spec:
-  # The credential files in the secret are base64 encoded twice and hence they need to be decoded for the programs to use them.
-  # This decode-creds initContainer takes care of decoding the files and writing them to a shared volume from which db-app container
-  # can read them and use it for connecting to ATP.
-  containers:
-  - name: oke-atp-helidon
-    image: iad.ocir.io/orasejapan/workshop/okeatpapp:latest
-    imagePullPolicy: Always
-    ports:
-    - containerPort: 8080
-    env:
-    - name: javax_sql_DataSource_workshopDataSource_dataSource_user
-      valueFrom:
-        secretKeyRef:
-          name: customized-db-cred
-          key: user_name
-    - name: javax_sql_DataSource_workshopDataSource_dataSource_password
-      valueFrom:
-        secretKeyRef:
-          name: customized-db-cred
-          key: password
-    volumeMounts:
-    - name: handson
-      mountPath: /db-demo/creds              
-  imagePullSecrets:
-  - name: workshop-ocirsecret
-  volumes:
-  - name: handson
-    configMap:
-      name: okeatp
+  selector:
+    matchLabels:
+      app: oke-atp-helidon
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: oke-atp-helidon
+        version: v1
+    spec:
+      # The credential files in the secret are base64 encoded twice and hence they need to be decoded for the programs to use them.
+      # This decode-creds initContainer takes care of decoding the files and writing them to a shared volume from which db-app container
+      # can read them and use it for connecting to ATP.
+      containers:
+      - name: oke-atp-helidon
+        image: iad.ocir.io/orasejapan/workshop/okeatpapp:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: javax_sql_DataSource_workshopDataSource_dataSource_user
+          valueFrom:
+            secretKeyRef:
+              name: customized-db-cred
+              key: user_name
+        - name: javax_sql_DataSource_workshopDataSource_dataSource_password
+          valueFrom:
+            secretKeyRef:
+              name: customized-db-cred
+              key: password
+        volumeMounts:
+        - name: handson
+          mountPath: /db-demo/creds              
+      imagePullSecrets:
+      - name: workshop-ocirsecret
+      volumes:
+      - name: handson
+        configMap:
+          name: okeatp
 ---
