@@ -50,8 +50,6 @@ spec:
         volumeMounts:
         - name: handson
           mountPath: /db-demo/creds              
-      imagePullSecrets:
-      - name: workshop-ocirsecret
       volumes:
       - name: handson
         configMap:
